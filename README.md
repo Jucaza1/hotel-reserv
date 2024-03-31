@@ -1,7 +1,7 @@
 # Hotel-reserv
 Hotel reservation API using GO
 
-### MAKEFILE commands
+## MAKEFILE commands
 ```
 make build
 
@@ -11,12 +11,12 @@ make test
 
 make docker
 ```
-### Set up mongo with docker
-## From makefile
+## Set up mongo with docker
+### From makefile
 ```
 make docker
 ```
-## From bash
+### From bash
 General config
 ```
 docker run --name mongodb -p 27017:27017 -d mongo:latest
