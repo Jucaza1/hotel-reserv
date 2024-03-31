@@ -6,13 +6,13 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 	"github.com/jucaza1/hotel-reserv/api"
+	middleware "github.com/jucaza1/hotel-reserv/api/middelware"
 	"github.com/jucaza1/hotel-reserv/db"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-const dburi = "mongodb://localhost:27017"
 
 var config = fiber.Config{
 	// Override d error handler
@@ -23,21 +23,42 @@ var config = fiber.Config{
 
 func main() {
 	listenAddr := flag.String("listenAddr", ":4000", "The listen addres of the API server")
-
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dburi))
-	if err != nil {
-		panic(err)
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
 	}
-	//handler initialization
-	userHandler := api.NewUserHandler(db.NewMongoUserStore(client))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
+	if err != nil {
+		log.Fatal(err)
+	}
+	//var initialization
+	var (
+		uStore       = db.NewMongoUserStore(client, db.DBNAME)
+		hStore       = db.NewMongoHotelStore(client, db.DBNAME)
+		rStore       = db.NewMongoRoomStore(client, db.DBNAME, hStore)
+		userHandler  = api.NewUserHandler(uStore)
+		hotelHandler = api.NewHotelHandler(hStore, rStore)
+		authHandler  = api.NewAuthHandler(uStore)
+		app          = fiber.New(config)
+		auth         = app.Group("/api")
+		apiv1        = app.Group("/api/v1", middleware.JWTAuthentication)
+	)
 
-	app := fiber.New(config)
-	apiv1 := app.Group("/api/v1")
+	//auth
+	auth.Post("/auth/", authHandler.HandleAuthenticate)
+
+	//version api
+	//user handlers
 	apiv1.Patch("/user/:id", userHandler.HandlePatchUser)
 	apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
 	apiv1.Post("/user/", userHandler.HandlePostUser)
 	apiv1.Get("/user/:id", userHandler.HandleGetUser)
 	apiv1.Get("/user", userHandler.HandleGetUsers)
+
+	//hotel handler
+	apiv1.Get("/hotel", hotelHandler.HandleGetHotels)
+	apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotel)
+	apiv1.Get("/hotel/:id/room", hotelHandler.HandleGetRooms)
+
 	log.Println(*listenAddr)
 	app.Listen(*listenAddr)
 }
