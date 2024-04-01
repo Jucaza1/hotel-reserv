@@ -7,13 +7,11 @@ import (
 
 type HotelHandler struct {
 	hotelStore db.HotelStore
-	roomStore  db.RoomStore
 }
 
-func NewHotelHandler(hs db.HotelStore, rs db.RoomStore) *HotelHandler {
+func NewHotelHandler(hs db.HotelStore) *HotelHandler {
 	return &HotelHandler{
 		hotelStore: hs,
-		roomStore:  rs,
 	}
 }
 
@@ -34,13 +32,4 @@ func (h *HotelHandler) HandleGetHotel(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(hotel)
-}
-
-func (h *HotelHandler) HandleGetRooms(c *fiber.Ctx) error {
-	id := c.Params("id")
-	rooms, err := h.roomStore.GetRooms(c.Context(), id)
-	if err != nil {
-		return err
-	}
-	return c.JSON(rooms)
 }

@@ -10,6 +10,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+const hotelColl = "hotels"
+
 type HotelStore interface {
 	GetHotels(context.Context) ([]*types.Hotel, error)
 	GetHotelByID(context.Context, string) (*types.Hotel, error)
@@ -25,7 +27,7 @@ type MongoHotelStore struct {
 func NewMongoHotelStore(client *mongo.Client, dbname string) *MongoHotelStore {
 	return &MongoHotelStore{
 		client: client,
-		coll:   client.Database(dbname).Collection("hotels"),
+		coll:   client.Database(dbname).Collection(hotelColl),
 	}
 }
 

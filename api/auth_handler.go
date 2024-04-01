@@ -48,7 +48,7 @@ func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
 	if len(token) == 0 {
 		return fmt.Errorf("internal error")
 	}
-	c.Response().Header.Add("Authorization", token)
+	c.Response().Header.Add("X-Authorization", token)
 	return c.SendStatus(http.StatusNoContent)
 }
 
@@ -56,8 +56,8 @@ func createTokenFromUser(user *types.User) string {
 	now := time.Now()
 	exp := now.Add(time.Hour * 4)
 	claims := jwt.MapClaims{
-		"id":  user.ID,
-		"exp": exp.Unix(),
+		"id":      user.ID,
+		"expires": exp.Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	secret := os.Getenv("JWT_SECRET")

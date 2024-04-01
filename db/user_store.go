@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jucaza1/hotel-reserv/types"
@@ -84,6 +85,9 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.Use
 	}
 	var user types.User
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&user); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf("not found")
+		}
 		return nil, err
 	}
 	return &user, nil
@@ -92,6 +96,9 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.Use
 func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
 	var user types.User
 	if err := s.coll.FindOne(ctx, bson.M{"email": email}).Decode(&user); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf("not found")
+		}
 		return nil, err
 	}
 	return &user, nil

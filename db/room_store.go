@@ -12,6 +12,7 @@ import (
 type RoomStore interface {
 	InsertRoom(context.Context, *types.Room) (*types.Room, error)
 	GetRooms(context.Context, string) ([]*types.Room, error)
+	GetRoom(context.Context, string) (*types.Room, error)
 }
 type MongoRoomStore struct {
 	client *mongo.Client
@@ -54,4 +55,16 @@ func (s *MongoRoomStore) GetRooms(ctx context.Context, hotelID string) ([]*types
 		return nil, err
 	}
 	return rooms, nil
+}
+
+func (s *MongoRoomStore) GetRoom(ctx context.Context, roomID string) (*types.Room, error) {
+	oid, err := primitive.ObjectIDFromHex(roomID)
+	if err != nil {
+		return nil, err
+	}
+	var room types.Room
+	if err = s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&room); err != nil {
+		return nil, err
+	}
+	return &room, nil
 }

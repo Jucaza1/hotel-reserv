@@ -32,15 +32,18 @@ func main() {
 	}
 	//var initialization
 	var (
-		uStore       = db.NewMongoUserStore(client, db.DBNAME)
-		hStore       = db.NewMongoHotelStore(client, db.DBNAME)
-		rStore       = db.NewMongoRoomStore(client, db.DBNAME, hStore)
-		userHandler  = api.NewUserHandler(uStore)
-		hotelHandler = api.NewHotelHandler(hStore, rStore)
-		authHandler  = api.NewAuthHandler(uStore)
-		app          = fiber.New(config)
-		auth         = app.Group("/api")
-		apiv1        = app.Group("/api/v1", middleware.JWTAuthentication)
+		uStore         = db.NewMongoUserStore(client, db.DBNAME)
+		hStore         = db.NewMongoHotelStore(client, db.DBNAME)
+		rStore         = db.NewMongoRoomStore(client, db.DBNAME, hStore)
+		bStore         = db.NewMongoBookingStore(client, db.DBNAME)
+		userHandler    = api.NewUserHandler(uStore)
+		hotelHandler   = api.NewHotelHandler(hStore)
+		roomHandler    = api.NewRoomHandler(rStore)
+		bookingHandler = api.NewBookingHandler(bStore, rStore)
+		authHandler    = api.NewAuthHandler(uStore)
+		app            = fiber.New(config)
+		auth           = app.Group("/api")
+		apiv1          = app.Group("/api/v1", middleware.JWTAuthentication(uStore))
 	)
 
 	//auth
@@ -48,17 +51,23 @@ func main() {
 
 	//version api
 	//user handlers
-	apiv1.Patch("/user/:id", userHandler.HandlePatchUser)
-	apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
-	apiv1.Post("/user/", userHandler.HandlePostUser)
-	apiv1.Get("/user/:id", userHandler.HandleGetUser)
-	apiv1.Get("/user", userHandler.HandleGetUsers)
+	apiv1.Patch("/users/:id", userHandler.HandlePatchUser)
+	apiv1.Delete("/users/:id", userHandler.HandleDeleteUser)
+	apiv1.Post("/users/", userHandler.HandlePostUser)
+	apiv1.Get("/users/:id", userHandler.HandleGetUser)
+	apiv1.Get("/users", userHandler.HandleGetUsers)
 
 	//hotel handler
-	apiv1.Get("/hotel", hotelHandler.HandleGetHotels)
-	apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotel)
-	apiv1.Get("/hotel/:id/room", hotelHandler.HandleGetRooms)
+	apiv1.Get("/hotels", hotelHandler.HandleGetHotels)
+	apiv1.Get("/hotels/:id", hotelHandler.HandleGetHotel)
 
+	//room handler
+	apiv1.Get("/hotels/:id/rooms", roomHandler.HandleGetRooms)
+
+	//booking handler
+	apiv1.Get("/hotels/:idh/rooms/:id/bookings", bookingHandler.HandleGetBookingsByRoom)
+	apiv1.Post("/hotels/:idh/rooms/:id/bookings", bookingHandler.HandlePostBooking)
+	apiv1.Get("/hotels/:idh/bookings", bookingHandler.HandleGetBookingsByHotel)
 	log.Println(*listenAddr)
 	app.Listen(*listenAddr)
 }
