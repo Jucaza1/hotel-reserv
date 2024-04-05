@@ -8,18 +8,17 @@ type Hotel struct {
 	Rating   int      `bson:"rating" json:"rating"`
 }
 
-type RoomSize int
+type CreateHotelParams struct {
+	Name     string `json:"name"`
+	Location string `json:"location"`
+	Rating   int    `json:"rating"`
+}
 
-const (
-	Small RoomSize = iota + 1
-	Normal
-	Large
-	Extra
-)
-
-type Room struct {
-	ID      string   `bson:"_id,omitempty" json:"id,omitempty"`
-	Size    RoomSize `bson:"type" json:"type"`
-	Price   float64  `bson:"price" json:"price"`
-	HotelID string   `bson:"hotelID" json:"hotelID"`
+func NewHotelFromParams(params CreateHotelParams) *Hotel {
+	return &Hotel{
+		Name:     params.Name,
+		Location: params.Location,
+		Rating:   params.Rating,
+		Rooms:    []string{},
+	}
 }

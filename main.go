@@ -38,36 +38,54 @@ func main() {
 		bStore         = db.NewMongoBookingStore(client, db.DBNAME)
 		userHandler    = api.NewUserHandler(uStore)
 		hotelHandler   = api.NewHotelHandler(hStore)
-		roomHandler    = api.NewRoomHandler(rStore)
+		roomHandler    = api.NewRoomHandler(rStore, hStore)
 		bookingHandler = api.NewBookingHandler(bStore, rStore)
 		authHandler    = api.NewAuthHandler(uStore)
 		app            = fiber.New(config)
 		auth           = app.Group("/api")
 		apiv1          = app.Group("/api/v1", middleware.JWTAuthentication(uStore))
+		admin          = apiv1.Group("/admin", middleware.AdminMiddleware)
 	)
 
 	//auth
-	auth.Post("/auth/", authHandler.HandleAuthenticate)
+	auth.Post("/auth", authHandler.HandleAuthenticate)
 
 	//version api
-	//user handlers
-	apiv1.Patch("/users/:id", userHandler.HandlePatchUser)
-	apiv1.Delete("/users/:id", userHandler.HandleDeleteUser)
-	apiv1.Post("/users/", userHandler.HandlePostUser)
-	apiv1.Get("/users/:id", userHandler.HandleGetUser)
-	apiv1.Get("/users", userHandler.HandleGetUsers)
+	apiv1.Get("/users/me", userHandler.HandleGetMyUser)
+	apiv1.Post("/users", userHandler.HandlePostUser)
 
 	//hotel handler
 	apiv1.Get("/hotels", hotelHandler.HandleGetHotels)
 	apiv1.Get("/hotels/:id", hotelHandler.HandleGetHotel)
 
 	//room handler
-	apiv1.Get("/hotels/:id/rooms", roomHandler.HandleGetRooms)
+	apiv1.Get("/hotels/:hid/rooms", roomHandler.HandleGetRooms)
+	apiv1.Get("/hotels/:hid/rooms/id", roomHandler.HandleGetRoomByID)
 
 	//booking handler
-	apiv1.Get("/hotels/:idh/rooms/:id/bookings", bookingHandler.HandleGetBookingsByRoom)
-	apiv1.Post("/hotels/:idh/rooms/:id/bookings", bookingHandler.HandlePostBooking)
-	apiv1.Get("/hotels/:idh/bookings", bookingHandler.HandleGetBookingsByHotel)
+	apiv1.Get("/hotels/:hid/rooms/:id/bookings", bookingHandler.HandleGetBookingsByRoom)
+	apiv1.Post("/hotels/:hid/rooms/:id/bookings", bookingHandler.HandlePostBooking)
+	apiv1.Get("/hotels/:hid/bookings", bookingHandler.HandleGetBookingsByHotel)
+	apiv1.Get("/bookings", bookingHandler.HandleGetBookings)
+	apiv1.Delete("/bookings/:id", bookingHandler.HandleCancelBooking)
+
+	//admin only user handlers
+	admin.Patch("/users/:id", userHandler.HandlePatchUser)
+	admin.Delete("/users/:id", userHandler.HandleDeleteUser)
+	admin.Post("/users", userHandler.HandlePostUser)
+	admin.Post("/users/admin", userHandler.HandlePostAdminUser)
+	admin.Get("/users/me", userHandler.HandleGetMyUser)
+	admin.Get("/users", userHandler.HandleGetUsers)
+	admin.Get("/users/:id", userHandler.HandleGetUser)
+
+	//admin only room handlers
+	admin.Delete("/rooms/id", roomHandler.HandleDeleteRoom)
+	admin.Post("/hotels/:hid/rooms/", roomHandler.HandlePostRoom)
+
+	//admin only hotel handler
+	admin.Delete("/hotels/:id", hotelHandler.HandleDeleteHotel, roomHandler.HandleDeleteRoomsByHotel)
+	admin.Post("/hotels", hotelHandler.HandlePostHotel)
+	admin.Patch("/hotels", hotelHandler.HandlePatchHotel)
 	log.Println(*listenAddr)
 	app.Listen(*listenAddr)
 }

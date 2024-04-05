@@ -36,7 +36,7 @@ func JWTAuthentication(us db.UserStore) fiber.Handler {
 		if err != nil || userID != user.ID {
 			return fmt.Errorf("unauthorized")
 		}
-		c.Request().Header.Add("userID", userID)
+		c.Context().SetUserValue("user", user)
 		return c.Next()
 	}
 }

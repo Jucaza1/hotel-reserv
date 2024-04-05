@@ -30,7 +30,7 @@ func (h *UserHandler) HandlePatchUser(c *fiber.Ctx) error {
 		//TODO FIX STATUS ERROR
 		return c.JSON(errors)
 	}
-	h.userStore.UpdateUser(c.Context(), userID, &updateValid)
+	h.userStore.UpdateUser(c.Context(), userID, updateValid)
 	return c.JSON(map[string]string{"updated": userID})
 }
 
@@ -61,11 +61,29 @@ func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 	}
 	return c.JSON(insertedUser)
 }
+func (h *UserHandler) HandlePostAdminUser(c *fiber.Ctx) error {
+	var params types.CreateUserParams
+	if err := c.BodyParser(&params); err != nil {
+		return err
+	}
+	if errors := params.Validate(); len(errors) > 0 {
+		//TODO FIX STATUS ERROR
+		return c.JSON(errors)
+	}
+	user, err := types.NewUserFromParams(params)
+	if err != nil {
+		return err
+	}
+	user.IsAdmin = true
+	insertedUser, err := h.userStore.InsertUser(c.Context(), user)
+	if err != nil {
+		return err
+	}
+	return c.JSON(insertedUser)
+}
 
 func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
-	var (
-		id = c.Params("id")
-	)
+	id := c.Params("id")
 	user, err := h.userStore.GetUserByID(c.Context(), id)
 	if err != nil {
 		return err
@@ -79,4 +97,13 @@ func (h *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(users)
+}
+
+func (h *UserHandler) HandleGetMyUser(c *fiber.Ctx) error {
+	userID := c.Context().UserValue("user").(types.User).ID
+	user, err := h.userStore.GetUserByID(c.Context(), userID)
+	if err != nil {
+		return err
+	}
+	return c.JSON(user)
 }

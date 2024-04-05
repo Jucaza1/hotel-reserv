@@ -18,6 +18,8 @@ type HotelStore interface {
 	InsertHotel(context.Context, *types.Hotel) (*types.Hotel, error)
 	UpdateHotelRooms(context.Context, string, string) error
 	UpdateHotel(context.Context, string, map[string]string) error
+	DeleteHotel(context.Context, string) error
+	DeleteHotelRoom(context.Context, string, string) error
 }
 type MongoHotelStore struct {
 	client *mongo.Client
@@ -51,9 +53,6 @@ func (s *MongoHotelStore) UpdateHotel(ctx context.Context, id string, updateMap 
 	if err != nil {
 		return err
 	}
-
-	//REVISAR ESTO HACER MEJOR PARSEANDO STRUCT
-
 	validUpdate := map[string]string{}
 	if updateMap["name"] != "" {
 		validUpdate["name"] = updateMap["name"]
@@ -80,12 +79,12 @@ func (s *MongoHotelStore) InsertHotel(ctx context.Context, hotel *types.Hotel) (
 	return hotel, nil
 }
 func (s *MongoHotelStore) GetHotels(ctx context.Context) ([]*types.Hotel, error) {
-	res, err := s.coll.Find(ctx, bson.M{})
+	cur, err := s.coll.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
 	var hotel []*types.Hotel
-	if err := res.All(ctx, &hotel); err != nil {
+	if err := cur.All(ctx, &hotel); err != nil {
 		return []*types.Hotel{}, nil
 	}
 	return hotel, nil
@@ -100,4 +99,25 @@ func (s *MongoHotelStore) GetHotelByID(ctx context.Context, id string) (*types.H
 		return nil, err
 	}
 	return &hotel, nil
+}
+func (s *MongoHotelStore) DeleteHotel(ctx context.Context, id string) error {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	_, err = s.coll.DeleteOne(ctx, bson.M{"_id": oid})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (s *MongoHotelStore) DeleteHotelRoom(ctx context.Context, hotelID, roomID string) error {
+	oid, err := primitive.ObjectIDFromHex(hotelID)
+	if err != nil {
+		return err
+	}
+	if _, err := s.coll.UpdateOne(ctx, bson.M{"_id": oid}, bson.M{"$pull": bson.M{"rooms": bson.M{"$in": roomID}}}); err != nil {
+		return err
+	}
+	return nil
 }

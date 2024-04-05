@@ -3,23 +3,71 @@ package api
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jucaza1/hotel-reserv/db"
+	"github.com/jucaza1/hotel-reserv/types"
 )
 
 type RoomHandler struct {
-	roomStore db.RoomStore
+	roomStore  db.RoomStore
+	hotelStore db.HotelStore
 }
 
-func NewRoomHandler(rs db.RoomStore) *RoomHandler {
+func NewRoomHandler(rs db.RoomStore, hs db.HotelStore) *RoomHandler {
 	return &RoomHandler{
-		roomStore: rs,
+		roomStore:  rs,
+		hotelStore: hs,
 	}
 }
 
 func (h *RoomHandler) HandleGetRooms(c *fiber.Ctx) error {
-	id := c.Params("id")
-	rooms, err := h.roomStore.GetRooms(c.Context(), id)
+	hid := c.Params("hid")
+	rooms, err := h.roomStore.GetRooms(c.Context(), hid)
 	if err != nil {
 		return err
 	}
 	return c.JSON(rooms)
+}
+
+func (h *RoomHandler) HandleGetRoomByID(c *fiber.Ctx) error {
+	id := c.Params("id")
+	rooms, err := h.roomStore.GetRoom(c.Context(), id)
+	if err != nil {
+		return err
+	}
+	return c.JSON(rooms)
+}
+
+func (h *RoomHandler) HandleDeleteRoom(c *fiber.Ctx) error {
+	id := c.Params("id")
+	err := h.roomStore.DeleteRoom(c.Context(), id)
+	if err != nil {
+		return err
+	}
+	return c.JSON(map[string]string{"deleted": id})
+}
+
+func (h *RoomHandler) HandleDeleteRoomsByHotel(c *fiber.Ctx) error {
+	id := c.Params("id")
+	err := h.roomStore.DeleteRoomsByHotel(c.Context(), id)
+	if err != nil {
+		return err
+	}
+	return c.JSON(map[string]string{"deleted": id})
+}
+
+func (h *RoomHandler) HandlePostRoom(c *fiber.Ctx) error {
+	hotelID := c.Params("id")
+	if _, err := h.hotelStore.GetHotelByID(c.Context(), hotelID); err != nil {
+		return err
+	}
+	var params types.CreateRoomParams
+	if err := c.BodyParser(&params); err != nil {
+		return err
+	}
+	room := types.NewRoomFromParams(params)
+	room.HotelID = hotelID
+	insertedRoom, err := h.roomStore.InsertRoom(c.Context(), room)
+	if err != nil {
+		return err
+	}
+	return c.JSON(insertedRoom)
 }

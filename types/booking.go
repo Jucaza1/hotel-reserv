@@ -13,6 +13,8 @@ type Booking struct {
 	FromDate    time.Time `bson:"fromDate,omitempty" json:"fromDate,omitempty"`
 	ToDate      time.Time `bson:"toDate,omitempty" json:"toDate,omitempty"`
 	CreatedDate time.Time `bson:"createDate,omitempty" json:"CreatedDate,omitempty"`
+	CancelledAt time.Time `bson:"cancelledAt" json:"cancelledAt"`
+	Cancelled   bool      `bson:"cancelled" json:"cancelled"`
 }
 type CreateBookingParams struct {
 	FromDate time.Time `json:"fromDate,omitempty"`
