@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jucaza1/hotel-reserv/db"
 	"github.com/jucaza1/hotel-reserv/types"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type AuthHandler struct {
@@ -32,29 +30,25 @@ type AuthParams struct {
 func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
 	var params AuthParams
 	if err := c.BodyParser(&params); err != nil {
-		return err
+		return types.ErrInvalidParams(err)
 	}
 	user, err := h.userStore.GetUserByEmail(c.Context(), params.Email)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return fmt.Errorf("invalid credentials")
-		}
-		return err
+		return types.ErrUnauthorized(fmt.Errorf("invalid credentials"))
 	}
 	if !types.AuthUser(user.EncyptedPassword, params.Pasword) {
-		return fmt.Errorf("invalid credentials")
+		return types.ErrUnauthorized(fmt.Errorf("invalid credentials"))
 	}
 	token := createTokenFromUser(user)
 	if len(token) == 0 {
-		return fmt.Errorf("internal error")
+		return types.ErrInternal(fmt.Errorf("error creating token"))
 	}
 	c.Response().Header.Add("X-Authorization", token)
 	return c.SendStatus(http.StatusNoContent)
 }
 
 func createTokenFromUser(user *types.User) string {
-	now := time.Now()
-	exp := now.Add(time.Hour * 4)
+	exp := time.Now().Add(time.Hour * 4)
 	claims := jwt.MapClaims{
 		"id":      user.ID,
 		"expires": exp.Unix(),

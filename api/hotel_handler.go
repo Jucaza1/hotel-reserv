@@ -1,6 +1,9 @@
 package api
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jucaza1/hotel-reserv/db"
 	"github.com/jucaza1/hotel-reserv/types"
@@ -27,6 +30,9 @@ func (h *HotelHandler) HandleGetHotels(c *fiber.Ctx) error {
 
 func (h *HotelHandler) HandleGetHotel(c *fiber.Ctx) error {
 	id := c.Params("id")
+	if len(id) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	hotel, err := h.hotelStore.GetHotelByID(c.Context(), id)
 	if err != nil {
 		return err
@@ -36,6 +42,9 @@ func (h *HotelHandler) HandleGetHotel(c *fiber.Ctx) error {
 }
 func (h *HotelHandler) HandleDeleteHotel(c *fiber.Ctx) error {
 	id := c.Params("id")
+	if len(id) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	err := h.hotelStore.DeleteHotel(c.Context(), id)
 	if err != nil {
 		return err
@@ -45,7 +54,10 @@ func (h *HotelHandler) HandleDeleteHotel(c *fiber.Ctx) error {
 func (h *HotelHandler) HandlePostHotel(c *fiber.Ctx) error {
 	var params types.CreateHotelParams
 	if err := c.BodyParser(&params); err != nil {
-		return err
+		return types.ErrInvalidParams(err)
+	}
+	if errors := params.Validate(); len(errors) > 0 {
+		return c.Status(http.StatusBadRequest).JSON(errors)
 	}
 	hotel := types.NewHotelFromParams(params)
 	insertedHotel, err := h.hotelStore.InsertHotel(c.Context(), hotel)
@@ -57,11 +69,18 @@ func (h *HotelHandler) HandlePostHotel(c *fiber.Ctx) error {
 func (h *HotelHandler) HandlePatchHotel(c *fiber.Ctx) error {
 	var (
 		hotelID   = c.Params("id")
-		updateMap map[string]string
+		updateMap types.UpdateHotel
 	)
-	if err := c.BodyParser(&updateMap); err != nil {
-		return err
+	if len(hotelID) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
 	}
-	h.hotelStore.UpdateHotel(c.Context(), hotelID, updateMap)
-	return c.JSON(map[string]string{"updated": hotelID})
+	if err := c.BodyParser(&updateMap); err != nil {
+		return types.ErrInvalidParams(err)
+	}
+	validUpdate, err := types.ValidateHotelUpdate(updateMap)
+	if err != nil {
+		return types.ErrInvalidParams(err)
+	}
+	h.hotelStore.UpdateHotel(c.Context(), hotelID, *validUpdate)
+	return c.JSON(types.MsgUpdated{Updated: hotelID})
 }

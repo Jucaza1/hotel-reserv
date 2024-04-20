@@ -43,35 +43,28 @@ func isEmailValid(e string) bool {
 	return emailRegex.MatchString(e)
 }
 
-func ValidateUpdate(update map[string]string) (updateValid map[string]string, errors map[string]string) {
+func ValidateUserUpdate(update UpdateUser) (updateValid map[string]string, errors map[string]string) {
 	errors = map[string]string{}
 	updateValid = map[string]string{}
-	if update["firstName"] != "" {
-		if len(update["firstName"]) < minFirstNameLen {
+	if update.Firstname != "" {
+		if len(update.Firstname) < minFirstNameLen {
 			errors["firstName"] = fmt.Sprintf("firstName length should be at least %d characters", minFirstNameLen)
 		} else {
-			updateValid["firstName"] = update["firstName"]
+			updateValid["firstName"] = update.Firstname
 		}
 	}
-	if update["lastName"] != "" {
-		if len(update["lastName"]) < minLastNameLen {
+	if update.Lastname != "" {
+		if len(update.Lastname) < minLastNameLen {
 			errors["lastName"] = fmt.Sprintf("lastName length should be at least %d characters", minLastNameLen)
 		} else {
-			updateValid["lastName"] = update["lastName"]
+			updateValid["lastName"] = update.Lastname
 		}
 	}
-	if update["password"] != "" {
-		if len(update["password"]) < minPasswordLen {
-			errors["password"] = fmt.Sprintf("password length should be at least %d characters", minPasswordLen)
-		} else {
-			updateValid["password"] = update["password"]
-		}
-	}
-	if update["email"] != "" {
-		if !isEmailValid(update["email"]) {
+	if update.Email != "" {
+		if !isEmailValid(update.Email) {
 			errors["email"] = "email is invalid"
 		} else {
-			updateValid["email"] = update["email"]
+			updateValid["email"] = update.Email
 		}
 	}
 	return updateValid, errors
@@ -110,4 +103,10 @@ func NewAdminFromParams(params CreateUserParams) (*User, error) {
 
 func AuthUser(encpw, pw string) bool {
 	return nil == bcrypt.CompareHashAndPassword([]byte(encpw), []byte(pw))
+}
+
+type UpdateUser struct {
+	Firstname string `json:"firstName,omitempty"`
+	Lastname  string `json:"lastName,omitempty"`
+	Email     string `json:"email,omitempty"`
 }

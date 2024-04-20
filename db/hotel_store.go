@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jucaza1/hotel-reserv/types"
@@ -13,13 +14,15 @@ import (
 const hotelColl = "hotels"
 
 type HotelStore interface {
-	GetHotels(context.Context) ([]*types.Hotel, error)
-	GetHotelByID(context.Context, string) (*types.Hotel, error)
-	InsertHotel(context.Context, *types.Hotel) (*types.Hotel, error)
-	UpdateHotelRooms(context.Context, string, string) error
-	UpdateHotel(context.Context, string, map[string]string) error
-	DeleteHotel(context.Context, string) error
-	DeleteHotelRoom(context.Context, string, string) error
+	UpdateHotelRooms(ctx context.Context, id, updateRoom string) error
+	UpdateHotel(ctx context.Context, id string, validUpdate map[string]any) error
+	InsertHotel(ctx context.Context, hotel *types.Hotel) (*types.Hotel, error)
+	GetHotels(ctx context.Context) ([]*types.Hotel, error)
+	GetHotelByID(ctx context.Context, id string) (*types.Hotel, error)
+	DeleteHotel(ctx context.Context, id string) error
+	DeleteHotelRoom(ctx context.Context, hotelID, roomID string) error
+
+	Dropper
 }
 type MongoHotelStore struct {
 	client *mongo.Client
@@ -33,10 +36,15 @@ func NewMongoHotelStore(client *mongo.Client, dbname string) *MongoHotelStore {
 	}
 }
 
-func (s *MongoHotelStore) UpdateHotelRooms(ctx context.Context, id string, updateRoom string) error {
+func (s *MongoHotelStore) Drop(ctx context.Context) error {
+	fmt.Println("--- dropping hotel collection")
+	return s.coll.Drop(ctx)
+}
+
+func (s *MongoHotelStore) UpdateHotelRooms(ctx context.Context, id, updateRoom string) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return types.ErrInvalidID(err)
 	}
 
 	filter := bson.M{"_id": oid}
@@ -44,36 +52,35 @@ func (s *MongoHotelStore) UpdateHotelRooms(ctx context.Context, id string, updat
 
 	_, err = s.coll.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return types.ErrNotFound(err)
+		}
+		return types.ErrInternal(err)
 	}
 	return nil
 }
-func (s *MongoHotelStore) UpdateHotel(ctx context.Context, id string, updateMap map[string]string) error {
+func (s *MongoHotelStore) UpdateHotel(ctx context.Context, id string, validUpdate map[string]any) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
-	}
-	validUpdate := map[string]string{}
-	if updateMap["name"] != "" {
-		validUpdate["name"] = updateMap["name"]
-	}
-	if updateMap["location"] != "" {
-		validUpdate["location"] = updateMap["location"]
-	}
-	if updateMap["name"] != "" && updateMap["location"] != "" {
-		return fmt.Errorf("no valid update parameters for hotel")
+		return types.ErrInvalidID(err)
 	}
 
 	filter := bson.M{"_id": oid}
 	update := bson.M{"$set": validUpdate}
-	s.coll.UpdateOne(ctx, filter, update)
+	_, err = s.coll.UpdateOne(ctx, filter, update)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return types.ErrNotFound(err)
+		}
+		return types.ErrInternal(err)
+	}
 	return nil
 }
 
 func (s *MongoHotelStore) InsertHotel(ctx context.Context, hotel *types.Hotel) (*types.Hotel, error) {
 	res, err := s.coll.InsertOne(ctx, hotel)
 	if err != nil {
-		return nil, err
+		return nil, types.ErrInternal(err)
 	}
 	hotel.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return hotel, nil
@@ -81,7 +88,10 @@ func (s *MongoHotelStore) InsertHotel(ctx context.Context, hotel *types.Hotel) (
 func (s *MongoHotelStore) GetHotels(ctx context.Context) ([]*types.Hotel, error) {
 	cur, err := s.coll.Find(ctx, bson.M{})
 	if err != nil {
-		return nil, err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return []*types.Hotel{}, nil
+		}
+		return nil, types.ErrInternal(err)
 	}
 	var hotel []*types.Hotel
 	if err := cur.All(ctx, &hotel); err != nil {
@@ -92,21 +102,27 @@ func (s *MongoHotelStore) GetHotels(ctx context.Context) ([]*types.Hotel, error)
 func (s *MongoHotelStore) GetHotelByID(ctx context.Context, id string) (*types.Hotel, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return nil, types.ErrInvalidID(err)
 	}
 	var hotel types.Hotel
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&hotel); err != nil {
-		return nil, err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, types.ErrNotFound(err)
+		}
+		return nil, types.ErrInternal(err)
 	}
 	return &hotel, nil
 }
 func (s *MongoHotelStore) DeleteHotel(ctx context.Context, id string) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return types.ErrInvalidID(err)
 	}
 	_, err = s.coll.DeleteOne(ctx, bson.M{"_id": oid})
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -114,10 +130,13 @@ func (s *MongoHotelStore) DeleteHotel(ctx context.Context, id string) error {
 func (s *MongoHotelStore) DeleteHotelRoom(ctx context.Context, hotelID, roomID string) error {
 	oid, err := primitive.ObjectIDFromHex(hotelID)
 	if err != nil {
-		return err
+		return types.ErrInvalidID(err)
 	}
-	if _, err := s.coll.UpdateOne(ctx, bson.M{"_id": oid}, bson.M{"$pull": bson.M{"rooms": bson.M{"$in": roomID}}}); err != nil {
-		return err
+	if _, err := s.coll.UpdateOne(ctx, bson.M{"_id": oid}, bson.M{"$pull": bson.M{"rooms": roomID}}); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil
+		}
+		return types.ErrInternal(err)
 	}
 	return nil
 }

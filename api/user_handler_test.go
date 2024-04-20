@@ -8,38 +8,37 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/jucaza1/hotel-reserv/db"
 	"github.com/jucaza1/hotel-reserv/types"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type testdb struct {
+type userTestDB struct {
 	db.UserStore
 }
 
-func (tdb *testdb) teardown(t *testing.T) {
+func (tdb *userTestDB) userTeardown(t *testing.T) {
 	if err := tdb.UserStore.Drop(context.TODO()); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func setup(t *testing.T) *testdb {
+func userSetup(t *testing.T) *userTestDB {
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &testdb{
+	return &userTestDB{
 		UserStore: db.NewMongoUserStore(client, db.TestDBNAME),
 	}
 }
 
 func TestPostUser(t *testing.T) {
-	tdb := setup(t)
-	defer tdb.teardown(t)
+	tdb := userSetup(t)
+	defer tdb.userTeardown(t)
 
-	app := fiber.New()
+	app := NewFiberAppCentralErr()
 	userHandler := NewUserHandler(tdb.UserStore)
 	app.Post("/", userHandler.HandlePostUser)
 
@@ -56,16 +55,19 @@ func TestPostUser(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	if resp.StatusCode != 200 {
+		t.Errorf("status code expected 200 but got %d", resp.StatusCode)
+	}
 	var user types.User
 	json.NewDecoder(resp.Body).Decode(&user)
 	compareUser(t, &params, &user)
 }
 
 func TestGetUser(t *testing.T) {
-	tdb := setup(t)
-	defer tdb.teardown(t)
+	tdb := userSetup(t)
+	defer tdb.userTeardown(t)
 
-	app := fiber.New()
+	app := NewFiberAppCentralErr()
 	userHandler := NewUserHandler(tdb.UserStore)
 	app.Get("/:id", userHandler.HandleGetUser)
 
@@ -89,6 +91,9 @@ func TestGetUser(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	if resp.StatusCode != 200 {
+		t.Errorf("status code expected 200 but got %d", resp.StatusCode)
+	}
 	var user types.User
 	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
 		t.Error(err)
@@ -97,10 +102,10 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestGetUsers(t *testing.T) {
-	tdb := setup(t)
-	defer tdb.teardown(t)
+	tdb := userSetup(t)
+	defer tdb.userTeardown(t)
 
-	app := fiber.New()
+	app := NewFiberAppCentralErr()
 	userHandler := NewUserHandler(tdb.UserStore)
 	app.Get("/", userHandler.HandleGetUsers)
 
@@ -135,21 +140,24 @@ func TestGetUsers(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	var user [2]types.User
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+	if resp.StatusCode != 200 {
+		t.Errorf("status code expected 200 but got %d", resp.StatusCode)
+	}
+	var users [2]types.User
+	if err := json.NewDecoder(resp.Body).Decode(&users); err != nil {
 		t.Error(err)
 	}
-	for i, u := range user {
+	for i, u := range users {
 		compareUserWithID(t, insertedUser[i], &u)
 	}
 
 }
 
 func TestDeleteUser(t *testing.T) {
-	tdb := setup(t)
-	defer tdb.teardown(t)
+	tdb := userSetup(t)
+	defer tdb.userTeardown(t)
 
-	app := fiber.New()
+	app := NewFiberAppCentralErr()
 	userHandler := NewUserHandler(tdb.UserStore)
 	app.Delete("/:id", userHandler.HandleDeleteUser)
 
@@ -176,11 +184,11 @@ func TestDeleteUser(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
-	type msgDeleted struct {
-		Deleted string `json:"deleted"`
+	if resp.StatusCode != 200 {
+		t.Errorf("status code expected 200 but got %d", resp.StatusCode)
 	}
-	msg := msgDeleted{}
+
+	var msg types.MsgDeleted
 	if err = json.NewDecoder(resp.Body).Decode(&msg); err != nil {
 		t.Error(err)
 	}
@@ -197,10 +205,10 @@ func TestDeleteUser(t *testing.T) {
 }
 
 func TestPatchUser(t *testing.T) {
-	tdb := setup(t)
-	defer tdb.teardown(t)
+	tdb := userSetup(t)
+	defer tdb.userTeardown(t)
 
-	app := fiber.New()
+	app := NewFiberAppCentralErr()
 	userHandler := NewUserHandler(tdb.UserStore)
 	app.Patch("/:id", userHandler.HandlePatchUser)
 
@@ -218,12 +226,7 @@ func TestPatchUser(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	type updateUser struct {
-		Firstname string `json:"firstName,omitempty"`
-		Lastname  string `json:"lastName,omitempty"`
-		Email     string `json:"email,omitempty"`
-	}
-	updateParams := updateUser{
+	updateParams := types.UpdateUser{
 		Firstname: "testName2",
 		Lastname:  "testLast2",
 		Email:     "test2@foo.com",
@@ -236,10 +239,11 @@ func TestPatchUser(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	type msgUpdated struct {
-		Updated string `json:"updated"`
+	if resp.StatusCode != 200 {
+		t.Errorf("status code expected 200 but got %d", resp.StatusCode)
 	}
-	var msg msgUpdated
+
+	var msg types.MsgUpdated
 	if err = json.NewDecoder(resp.Body).Decode(&msg); err != nil {
 		t.Error(err)
 	}

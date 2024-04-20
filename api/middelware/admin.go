@@ -10,10 +10,10 @@ import (
 func AdminMiddleware(c *fiber.Ctx) error {
 	user, ok := c.Context().UserValue("user").(types.User)
 	if !ok {
-		return fmt.Errorf("unauthorized")
+		return types.ErrUnauthorized(fmt.Errorf("user not found"))
 	}
 	if !user.IsAdmin {
-		return fmt.Errorf("unauthorized")
+		return types.ErrUnauthorized(fmt.Errorf("user is not admin"))
 	}
 	return c.Next()
 }

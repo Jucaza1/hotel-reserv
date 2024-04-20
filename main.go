@@ -5,7 +5,6 @@ import (
 	"flag"
 	"log"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"github.com/jucaza1/hotel-reserv/api"
 	middleware "github.com/jucaza1/hotel-reserv/api/middelware"
@@ -14,16 +13,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var config = fiber.Config{
-	// Override d error handler
-	ErrorHandler: func(c *fiber.Ctx, err error) error {
-		return c.JSON(map[string]string{"error": err.Error()})
-	},
-}
-
 func main() {
 	listenAddr := flag.String("listenAddr", ":4000", "The listen addres of the API server")
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(".env"); err != nil {
 		log.Fatal(err)
 	}
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
@@ -41,7 +33,7 @@ func main() {
 		roomHandler    = api.NewRoomHandler(rStore, hStore)
 		bookingHandler = api.NewBookingHandler(bStore, rStore)
 		authHandler    = api.NewAuthHandler(uStore)
-		app            = fiber.New(config)
+		app            = api.NewFiberAppCentralErr()
 		auth           = app.Group("/api")
 		apiv1          = app.Group("/api/v1", middleware.JWTAuthentication(uStore))
 		admin          = apiv1.Group("/admin", middleware.AdminMiddleware)
@@ -63,11 +55,11 @@ func main() {
 	apiv1.Get("/hotels/:hid/rooms/id", roomHandler.HandleGetRoomByID)
 
 	//booking handler
-	apiv1.Get("/hotels/:hid/rooms/:id/bookings", bookingHandler.HandleGetBookingsByRoom)
-	apiv1.Post("/hotels/:hid/rooms/:id/bookings", bookingHandler.HandlePostBooking)
+	apiv1.Get("/rooms/:id/bookings", bookingHandler.HandleGetBookingsByRoom)
+	apiv1.Post("/rooms/:id/bookings", bookingHandler.HandlePostBooking)
 	apiv1.Get("/hotels/:hid/bookings", bookingHandler.HandleGetBookingsByHotel)
 	apiv1.Get("/bookings", bookingHandler.HandleGetBookings)
-	apiv1.Delete("/bookings/:id", bookingHandler.HandleCancelBooking)
+	apiv1.Patch("/bookings/:id", bookingHandler.HandleCancelBooking)
 
 	//admin only user handlers
 	admin.Patch("/users/:id", userHandler.HandlePatchUser)
@@ -86,6 +78,7 @@ func main() {
 	admin.Delete("/hotels/:id", hotelHandler.HandleDeleteHotel, roomHandler.HandleDeleteRoomsByHotel)
 	admin.Post("/hotels", hotelHandler.HandlePostHotel)
 	admin.Patch("/hotels", hotelHandler.HandlePatchHotel)
+	admin.Delete("/bookings/:id", bookingHandler.HandleDeleteBooking)
 	log.Println(*listenAddr)
 	app.Listen(*listenAddr)
 }

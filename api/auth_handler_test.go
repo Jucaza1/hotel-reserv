@@ -8,15 +8,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 	"github.com/jucaza1/hotel-reserv/types"
 )
 
 func TestHandleAuthenticateSuccess(t *testing.T) {
-	tdb := setup(t)
-	defer tdb.teardown(t)
-
-	app := fiber.New()
+	tdb := userSetup(t)
+	defer tdb.userTeardown(t)
+	if err := godotenv.Load("../.env"); err != nil {
+		t.Error(err)
+	}
+	app := NewFiberAppCentralErr()
 	authHandler := NewAuthHandler(tdb.UserStore)
 	app.Post("/auth", authHandler.HandleAuthenticate)
 
@@ -40,7 +42,7 @@ func TestHandleAuthenticateSuccess(t *testing.T) {
 	}
 	b, _ := json.Marshal(authParams)
 	req := httptest.NewRequest("POST", "/auth", bytes.NewReader(b))
-	req.Header.Add("Content-Type", "aplication/json")
+	req.Header.Add("Content-Type", "application/json")
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Error(err)
@@ -48,17 +50,19 @@ func TestHandleAuthenticateSuccess(t *testing.T) {
 	if resp.StatusCode != http.StatusNoContent {
 		t.Errorf("expected the response status code to be %d but got %d", http.StatusNoContent, resp.StatusCode)
 	}
-	token := resp.Header.Get("Authorization")
+	token := resp.Header.Get("X-Authorization")
 	if token == "" {
 		t.Errorf("expected token to be found in headers")
 	}
 
 }
 func TestHandleAuthenticateWrongPassword(t *testing.T) {
-	tdb := setup(t)
-	defer tdb.teardown(t)
-
-	app := fiber.New()
+	tdb := userSetup(t)
+	defer tdb.userTeardown(t)
+	if err := godotenv.Load("../.env"); err != nil {
+		t.Error(err)
+	}
+	app := NewFiberAppCentralErr()
 	authHandler := NewAuthHandler(tdb.UserStore)
 	app.Post("/auth", authHandler.HandleAuthenticate)
 
@@ -82,7 +86,7 @@ func TestHandleAuthenticateWrongPassword(t *testing.T) {
 	}
 	b, _ := json.Marshal(authParams)
 	req := httptest.NewRequest("POST", "/auth", bytes.NewReader(b))
-	req.Header.Add("Content-Type", "aplication/json")
+	req.Header.Add("Content-Type", "application/json")
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Error(err)
@@ -90,17 +94,19 @@ func TestHandleAuthenticateWrongPassword(t *testing.T) {
 	if resp.StatusCode == http.StatusNoContent {
 		t.Errorf("expected the response status code to NOT be %d", http.StatusNoContent)
 	}
-	token := resp.Header.Get("Authorization")
+	token := resp.Header.Get("X-Authorization")
 	if token != "" {
 		t.Errorf("expected token not to be found in headers")
 	}
 
 }
 func TestHandleAuthenticateWrongEmail(t *testing.T) {
-	tdb := setup(t)
-	defer tdb.teardown(t)
-
-	app := fiber.New()
+	tdb := userSetup(t)
+	defer tdb.userTeardown(t)
+	if err := godotenv.Load("../.env"); err != nil {
+		t.Error(err)
+	}
+	app := NewFiberAppCentralErr()
 	authHandler := NewAuthHandler(tdb.UserStore)
 	app.Post("/auth", authHandler.HandleAuthenticate)
 
@@ -124,15 +130,15 @@ func TestHandleAuthenticateWrongEmail(t *testing.T) {
 	}
 	b, _ := json.Marshal(authParams)
 	req := httptest.NewRequest("POST", "/auth", bytes.NewReader(b))
-	req.Header.Add("Content-Type", "aplication/json")
+	req.Header.Add("Content-Type", "application/json")
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Error(err)
 	}
-	if resp.StatusCode == http.StatusNoContent {
-		t.Errorf("expected the response status code to NOT be %d", http.StatusNoContent)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("expected the response status code to be %d but got %d", http.StatusUnauthorized, resp.StatusCode)
 	}
-	token := resp.Header.Get("Authorization")
+	token := resp.Header.Get("X-Authorization")
 	if token != "" {
 		t.Errorf("expected token not to be found in headers")
 	}

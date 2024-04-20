@@ -11,12 +11,12 @@ const (
 
 type Room struct {
 	ID      string   `bson:"_id,omitempty" json:"id,omitempty"`
-	Size    RoomSize `bson:"type" json:"type"`
+	Size    RoomSize `bson:"size" json:"size"`
 	Price   float64  `bson:"price" json:"price"`
 	HotelID string   `bson:"hotelID" json:"hotelID"`
 }
 type CreateRoomParams struct {
-	Size  RoomSize `json:"type"`
+	Size  RoomSize `json:"size"`
 	Price float64  `json:"price"`
 }
 

@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jucaza1/hotel-reserv/db"
 	"github.com/jucaza1/hotel-reserv/types"
@@ -20,6 +22,9 @@ func NewRoomHandler(rs db.RoomStore, hs db.HotelStore) *RoomHandler {
 
 func (h *RoomHandler) HandleGetRooms(c *fiber.Ctx) error {
 	hid := c.Params("hid")
+	if len(hid) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	rooms, err := h.roomStore.GetRooms(c.Context(), hid)
 	if err != nil {
 		return err
@@ -29,6 +34,9 @@ func (h *RoomHandler) HandleGetRooms(c *fiber.Ctx) error {
 
 func (h *RoomHandler) HandleGetRoomByID(c *fiber.Ctx) error {
 	id := c.Params("id")
+	if len(id) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	rooms, err := h.roomStore.GetRoom(c.Context(), id)
 	if err != nil {
 		return err
@@ -38,30 +46,39 @@ func (h *RoomHandler) HandleGetRoomByID(c *fiber.Ctx) error {
 
 func (h *RoomHandler) HandleDeleteRoom(c *fiber.Ctx) error {
 	id := c.Params("id")
+	if len(id) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	err := h.roomStore.DeleteRoom(c.Context(), id)
 	if err != nil {
 		return err
 	}
-	return c.JSON(map[string]string{"deleted": id})
+	return c.JSON(types.MsgDeleted{Deleted: id})
 }
 
 func (h *RoomHandler) HandleDeleteRoomsByHotel(c *fiber.Ctx) error {
 	id := c.Params("id")
+	if len(id) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	err := h.roomStore.DeleteRoomsByHotel(c.Context(), id)
 	if err != nil {
 		return err
 	}
-	return c.JSON(map[string]string{"deleted": id})
+	return c.JSON(types.MsgDeleted{Deleted: id})
 }
 
 func (h *RoomHandler) HandlePostRoom(c *fiber.Ctx) error {
-	hotelID := c.Params("id")
+	hotelID := c.Params("hid")
+	if len(hotelID) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	if _, err := h.hotelStore.GetHotelByID(c.Context(), hotelID); err != nil {
 		return err
 	}
 	var params types.CreateRoomParams
 	if err := c.BodyParser(&params); err != nil {
-		return err
+		return types.ErrInvalidParams(err)
 	}
 	room := types.NewRoomFromParams(params)
 	room.HotelID = hotelID

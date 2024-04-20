@@ -22,9 +22,12 @@ func NewBookingHandler(bs db.BookingStore, rs db.RoomStore) *BookingHandler {
 
 func (h *BookingHandler) HandleGetBookingsByRoom(c *fiber.Ctx) error {
 	roomID := c.Params("id")
+	if len(roomID) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	user, ok := c.Context().UserValue("user").(types.User)
 	if !ok {
-		return fmt.Errorf("user not found")
+		return types.ErrUnauthorized(fmt.Errorf("user not found"))
 	}
 	if user.IsAdmin {
 		bookings, err := h.bookStore.GetBookingsByRoom(c.Context(), roomID)
@@ -43,26 +46,22 @@ func (h *BookingHandler) HandleGetBookingsByRoom(c *fiber.Ctx) error {
 
 func (h *BookingHandler) HandlePostBooking(c *fiber.Ctx) error {
 	roomID := c.Params("id")
-	hotelID := c.Params("hid")
+	if len(roomID) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	room, err := h.roomStore.GetRoom(c.Context(), roomID)
 	if err != nil {
 		return err
 	}
-	if hotelID != room.HotelID {
-		return fmt.Errorf("invalid request")
-	}
 	var params types.CreateBookingParams
 	if err := c.BodyParser(&params); err != nil {
-		return err
+		return types.ErrInvalidParams(err)
 	}
 	if err := params.Validate(); err != nil {
-		return err
+		return types.ErrInvalidParams(err)
 	}
 	userID := c.Context().UserValue("user").(types.User).ID
-	booking, err := types.NewBookingFromParams(params, userID, hotelID, roomID)
-	if err != nil {
-		return err
-	}
+	booking, _ := types.NewBookingFromParams(params, userID, room.HotelID, roomID)
 	InsertedBooking, err := h.bookStore.InsertBooking(c.Context(), booking)
 	if err != nil {
 		return err
@@ -72,9 +71,12 @@ func (h *BookingHandler) HandlePostBooking(c *fiber.Ctx) error {
 
 func (h *BookingHandler) HandleGetBookingsByHotel(c *fiber.Ctx) error {
 	hotelID := c.Params("hid")
+	if len(hotelID) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	user, ok := c.Context().UserValue("user").(types.User)
 	if !ok {
-		return fmt.Errorf("user not found")
+		return types.ErrUnauthorized(fmt.Errorf("user not found"))
 	}
 	if user.IsAdmin {
 		bookings, err := h.bookStore.GetBookingsByHotel(c.Context(), hotelID)
@@ -91,10 +93,11 @@ func (h *BookingHandler) HandleGetBookingsByHotel(c *fiber.Ctx) error {
 	}
 
 }
+
 func (h *BookingHandler) HandleGetBookings(c *fiber.Ctx) error {
 	user, ok := c.Context().UserValue("user").(types.User)
 	if !ok {
-		return fmt.Errorf("user not found")
+		return types.ErrUnauthorized(fmt.Errorf("user not found"))
 	}
 	if user.IsAdmin {
 		bookings, err := h.bookStore.GetBookings(c.Context())
@@ -111,11 +114,15 @@ func (h *BookingHandler) HandleGetBookings(c *fiber.Ctx) error {
 		return c.JSON(bookings)
 	}
 }
+
 func (h *BookingHandler) HandleCancelBooking(c *fiber.Ctx) error {
 	bookingID := c.Params("id")
+	if len(bookingID) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
 	user, ok := c.Context().UserValue("user").(types.User)
 	if !ok {
-		return fmt.Errorf("user not found")
+		return types.ErrUnauthorized(fmt.Errorf("user not found"))
 	}
 	if user.IsAdmin {
 		if err := h.bookStore.CancelBooking(c.Context(), bookingID); err != nil {
@@ -132,5 +139,16 @@ func (h *BookingHandler) HandleCancelBooking(c *fiber.Ctx) error {
 			}
 		}
 	}
-	return c.JSON(map[string]string{"deleted": bookingID})
+	return c.JSON(types.MsgCancelled{Cancelled: bookingID})
+}
+
+func (h *BookingHandler) HandleDeleteBooking(c *fiber.Ctx) error {
+	bookingID := c.Params("id")
+	if len(bookingID) == 0 {
+		return types.ErrInvalidID(fmt.Errorf("missing params in path"))
+	}
+	if err := h.bookStore.DeleteBooking(c.Context(), bookingID); err != nil {
+		return err
+	}
+	return c.JSON(types.MsgDeleted{Deleted: bookingID})
 }
