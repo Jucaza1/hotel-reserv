@@ -2,8 +2,12 @@ package api
 
 import (
 	"fmt"
+	"os"
+	"testing"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
+	"github.com/jucaza1/hotel-reserv/db"
 	"github.com/jucaza1/hotel-reserv/types"
 )
 
@@ -21,4 +25,20 @@ func NewFiberAppCentralErr() *fiber.App {
 		},
 	}
 	return fiber.New(config)
+}
+
+//test env initialization
+
+func injectENV(t *testing.T) {
+	if err := godotenv.Load("../.env"); err != nil {
+		t.Error(err)
+	}
+	db.DBURI = os.Getenv("MONGO_DB_URI")
+	db.TestDBNAME = os.Getenv("MONGO_DB_TESTNAME")
+	if db.TestDBNAME == "" {
+		t.Fatal("error: MONGO_DB_TESTNAME not found in .env")
+	}
+	if db.DBURI == "" {
+		t.Fatal("error: MONGO_DB_URI not found in .env")
+	}
 }

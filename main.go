@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/jucaza1/hotel-reserv/api"
@@ -14,9 +14,20 @@ import (
 )
 
 func main() {
-	listenAddr := flag.String("listenAddr", ":4000", "The listen addres of the API server")
 	if err := godotenv.Load(".env"); err != nil {
 		log.Fatal(err)
+	}
+	db.DBURI = os.Getenv("MONGO_DB_URI")
+	db.DBNAME = os.Getenv("MONGO_DB_NAME")
+	listenAddr := os.Getenv("HTTP_LISTEN_ADDRESS")
+	if listenAddr == "" {
+		log.Fatal("error: HTTP_LISTEN_ADDRESS not found in .env")
+	}
+	if db.DBNAME == "" {
+		log.Fatal("error: MONGO_DB_NAME not found in .env")
+	}
+	if db.DBURI == "" {
+		log.Fatal("error: MONGO_DB_URI not found in .env")
 	}
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
 	if err != nil {
@@ -79,8 +90,9 @@ func main() {
 	admin.Post("/hotels", hotelHandler.HandlePostHotel)
 	admin.Patch("/hotels", hotelHandler.HandlePatchHotel)
 	admin.Delete("/bookings/:id", bookingHandler.HandleDeleteBooking)
-	log.Println(*listenAddr)
-	app.Listen(*listenAddr)
+
+	log.Println("app listening on port ", listenAddr)
+	log.Fatal(app.Listen(listenAddr))
 }
 
 //docker run -d --name YOUR_CONTAINER_NAME_HERE -p YOUR_LOCALHOST_PORT_HERE:27017 -e MONGO_INITDB_ROOT_USERNAME=YOUR_USERNAME_HERE -e MONGO_INITDB_ROOT_PASSWORD=YOUR_PASSWORD_HERE mongo

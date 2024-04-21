@@ -29,6 +29,7 @@ func (tdb *roomTestDB) roomTeardown(t *testing.T) {
 	}
 }
 func roomSetup(t *testing.T) *roomTestDB {
+	injectENV(t)
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
 	if err != nil {
 		t.Fatal(err)
@@ -44,8 +45,11 @@ func seedTestHotel(t *testing.T, tdb db.HotelStore) (hotelID string) {
 		Location: "landtest",
 		Rating:   4,
 	}
-	insertedHotel := types.NewHotelFromParams(params)
-	insertedHotel, err := tdb.InsertHotel(context.Background(), insertedHotel)
+	insertedHotel, err := types.NewHotelFromParams(params)
+	if err != nil {
+		t.Error(err)
+	}
+	insertedHotel, err = tdb.InsertHotel(context.Background(), insertedHotel)
 	if err != nil {
 		t.Error(err)
 	}

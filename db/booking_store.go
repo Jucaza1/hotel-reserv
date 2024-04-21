@@ -181,6 +181,17 @@ func (s *MongoBookingStore) CancelBooking(ctx context.Context, bookingID string)
 	if err != nil {
 		return types.ErrInvalidID(err)
 	}
+	var booking types.Booking
+	err = s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&booking)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return types.ErrNotFound(err)
+		}
+		return types.ErrInternal(err)
+	}
+	if booking.FromDate.Unix() <= time.Now().Unix() {
+		return types.ErrCancelPastBooking(fmt.Errorf("can not cancel booking in the past"))
+	}
 	filter := bson.M{"_id": oid}
 	update := bson.D{{"$set", bson.D{{"cancelled", true}, {"cancelledAt", time.Now()}}}}
 	if _, err = s.coll.UpdateOne(ctx, filter, update); err != nil {

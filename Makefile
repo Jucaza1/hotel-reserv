@@ -6,5 +6,5 @@ seed:
 	@go run scripts/seed.go
 test:
 	@go test -v ./...
-docker:
+mongo:
 	@docker run --name mongodb -p 27017:27017 -d mongo:latest

@@ -28,12 +28,16 @@ func (p CreateBookingParams) Validate() error {
 	return nil
 }
 func NewBookingFromParams(params CreateBookingParams, userID string, hotelID string, roomID string) (*Booking, error) {
+
 	return &Booking{
 		UserID:      userID,
 		RoomID:      roomID,
 		HotelID:     hotelID,
-		FromDate:    params.FromDate,
-		ToDate:      params.ToDate,
+		FromDate:    truncateToDay(params.FromDate),
+		ToDate:      truncateToDay(params.ToDate),
 		CreatedDate: time.Now(),
 	}, nil
+}
+func truncateToDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }

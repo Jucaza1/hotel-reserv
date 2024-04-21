@@ -59,7 +59,10 @@ func (h *HotelHandler) HandlePostHotel(c *fiber.Ctx) error {
 	if errors := params.Validate(); len(errors) > 0 {
 		return c.Status(http.StatusBadRequest).JSON(errors)
 	}
-	hotel := types.NewHotelFromParams(params)
+	hotel, err := types.NewHotelFromParams(params)
+	if err != nil {
+		return types.ErrInvalidParams(err)
+	}
 	insertedHotel, err := h.hotelStore.InsertHotel(c.Context(), hotel)
 	if err != nil {
 		return err

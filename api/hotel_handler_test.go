@@ -26,6 +26,7 @@ func (tdb *hotelTestDB) hotelTeardown(t *testing.T) {
 }
 
 func hotelSetup(t *testing.T) *hotelTestDB {
+	injectENV(t)
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
 	if err != nil {
 		t.Fatal(err)
@@ -75,8 +76,11 @@ func TestGetHotel(t *testing.T) {
 		Location: "landtest",
 		Rating:   4,
 	}
-	insertedHotel := types.NewHotelFromParams(params)
-	insertedHotel, err := tdb.HotelStore.InsertHotel(context.Background(), insertedHotel)
+	insertedHotel, err := types.NewHotelFromParams(params)
+	if err != nil {
+		t.Error(err)
+	}
+	insertedHotel, err = tdb.HotelStore.InsertHotel(context.Background(), insertedHotel)
 	if err != nil {
 		t.Error(err)
 	}
@@ -118,7 +122,10 @@ func TestGetHotels(t *testing.T) {
 	insertedHotels := [2]*types.Hotel{}
 	var err error
 	for i, param := range params {
-		insertedHotels[i] = types.NewHotelFromParams(param)
+		insertedHotels[i], err = types.NewHotelFromParams(param)
+		if err != nil {
+			t.Error(err)
+		}
 		insertedHotels[i], err = tdb.HotelStore.InsertHotel(context.Background(), insertedHotels[i])
 		if err != nil {
 			t.Error(err)
@@ -156,8 +163,11 @@ func TestDeleteHotel(t *testing.T) {
 		Rating:   4,
 	}
 
-	insertedHotel := types.NewHotelFromParams(params)
-	insertedHotel, err := tdb.HotelStore.InsertHotel(context.Background(), insertedHotel)
+	insertedHotel, err := types.NewHotelFromParams(params)
+	if err != nil {
+		t.Error(err)
+	}
+	insertedHotel, err = tdb.HotelStore.InsertHotel(context.Background(), insertedHotel)
 	if err != nil {
 		t.Error(err)
 	}
@@ -235,7 +245,10 @@ func TestPatchHotel(t *testing.T) {
 		Location: "testLand1",
 		Rating:   3,
 	}
-	instertedHotel := types.NewHotelFromParams(params)
+	instertedHotel, err := types.NewHotelFromParams(params)
+	if err != nil {
+		t.Error(err)
+	}
 	insertedHotel, err := tdb.HotelStore.InsertHotel(context.Background(), instertedHotel)
 	if err != nil {
 		t.Error(err)

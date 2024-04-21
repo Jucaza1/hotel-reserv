@@ -8,16 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/joho/godotenv"
 	"github.com/jucaza1/hotel-reserv/types"
 )
 
 func TestHandleAuthenticateSuccess(t *testing.T) {
 	tdb := userSetup(t)
 	defer tdb.userTeardown(t)
-	if err := godotenv.Load("../.env"); err != nil {
-		t.Error(err)
-	}
 	app := NewFiberAppCentralErr()
 	authHandler := NewAuthHandler(tdb.UserStore)
 	app.Post("/auth", authHandler.HandleAuthenticate)
@@ -59,9 +55,6 @@ func TestHandleAuthenticateSuccess(t *testing.T) {
 func TestHandleAuthenticateWrongPassword(t *testing.T) {
 	tdb := userSetup(t)
 	defer tdb.userTeardown(t)
-	if err := godotenv.Load("../.env"); err != nil {
-		t.Error(err)
-	}
 	app := NewFiberAppCentralErr()
 	authHandler := NewAuthHandler(tdb.UserStore)
 	app.Post("/auth", authHandler.HandleAuthenticate)
@@ -103,9 +96,6 @@ func TestHandleAuthenticateWrongPassword(t *testing.T) {
 func TestHandleAuthenticateWrongEmail(t *testing.T) {
 	tdb := userSetup(t)
 	defer tdb.userTeardown(t)
-	if err := godotenv.Load("../.env"); err != nil {
-		t.Error(err)
-	}
 	app := NewFiberAppCentralErr()
 	authHandler := NewAuthHandler(tdb.UserStore)
 	app.Post("/auth", authHandler.HandleAuthenticate)

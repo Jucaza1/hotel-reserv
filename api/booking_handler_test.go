@@ -36,6 +36,7 @@ func (tdb *bookingTestDB) bookingTeardown(t *testing.T) {
 }
 
 func bookingSetup(t *testing.T) *bookingTestDB {
+	injectENV(t)
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
 	if err != nil {
 		t.Fatal(err)
@@ -566,11 +567,11 @@ func TestHandlePostBookingsSuccess(t *testing.T) {
 	roomID := seedTestRoom(t, tdb.RoomStore, hotelID)
 	params := [2]types.CreateBookingParams{
 		{
-			FromDate: time.Now().Add(time.Hour * 24),
-			ToDate:   time.Now().Add(time.Hour * 72),
+			FromDate: time.Now().Add(time.Hour * 24 * 20),
+			ToDate:   time.Now().Add(time.Hour * 24 * 25),
 		}, {
-			FromDate: time.Now().Add(time.Hour * 84),
-			ToDate:   time.Now().Add(time.Hour * 108),
+			FromDate: time.Now().Add(time.Hour * 24 * 30),
+			ToDate:   time.Now().Add(time.Hour * 24 * 32),
 		},
 	}
 	var (
@@ -589,8 +590,8 @@ func TestHandlePostBookingsSuccess(t *testing.T) {
 		}
 	}
 	postBookingParams := types.CreateBookingParams{
-		FromDate: time.Now().Add(time.Hour * 120),
-		ToDate:   time.Now().Add(time.Hour * 150),
+		FromDate: time.Now().Add(time.Hour * 24 * 15),
+		ToDate:   time.Now().Add(time.Hour * 24 * 18),
 	}
 
 	b, err := json.Marshal(postBookingParams)
@@ -638,11 +639,11 @@ func TestHandlePostBookingsFailureDate(t *testing.T) {
 	roomID := seedTestRoom(t, tdb.RoomStore, hotelID)
 	params := [2]types.CreateBookingParams{
 		{
-			FromDate: time.Now().Add(time.Hour * 24),
-			ToDate:   time.Now().Add(time.Hour * 72),
+			FromDate: time.Now().Add(time.Hour * 24 * 20),
+			ToDate:   time.Now().Add(time.Hour * 24 * 25),
 		}, {
-			FromDate: time.Now().Add(time.Hour * 84),
-			ToDate:   time.Now().Add(time.Hour * 108),
+			FromDate: time.Now().Add(time.Hour * 24 * 27),
+			ToDate:   time.Now().Add(time.Hour * 24 * 30),
 		},
 	}
 	var (
@@ -661,8 +662,8 @@ func TestHandlePostBookingsFailureDate(t *testing.T) {
 		}
 	}
 	postBookingParams := types.CreateBookingParams{
-		FromDate: time.Now().Add(time.Hour * 90),
-		ToDate:   time.Now().Add(time.Hour * 150),
+		FromDate: time.Now().Add(time.Hour * 24 * 24),
+		ToDate:   time.Now().Add(time.Hour * 24 * 28),
 	}
 
 	b, err := json.Marshal(postBookingParams)

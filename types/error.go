@@ -64,3 +64,10 @@ func ErrUnavailableDate(e error) ErrorSt {
 		Err:    e,
 	}
 }
+func ErrCancelPastBooking(e error) ErrorSt {
+	return ErrorSt{
+		Msg:    "can not cancel booking in the past",
+		Status: http.StatusUnprocessableEntity,
+		Err:    e,
+	}
+}

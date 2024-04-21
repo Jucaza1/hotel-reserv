@@ -35,13 +35,13 @@ func (p CreateHotelParams) Validate() map[string]string {
 	}
 	return errors
 }
-func NewHotelFromParams(params CreateHotelParams) *Hotel {
+func NewHotelFromParams(params CreateHotelParams) (*Hotel, error) {
 	return &Hotel{
 		Name:     params.Name,
 		Location: params.Location,
 		Rating:   params.Rating,
 		Rooms:    []string{},
-	}
+	}, nil
 }
 
 type UpdateHotel struct {

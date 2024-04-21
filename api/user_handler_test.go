@@ -25,8 +25,10 @@ func (tdb *userTestDB) userTeardown(t *testing.T) {
 }
 
 func userSetup(t *testing.T) *userTestDB {
+	injectENV(t)
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
 	if err != nil {
+		t.Errorf("dbURI %s", db.DBURI)
 		t.Fatal(err)
 	}
 	return &userTestDB{
