@@ -36,7 +36,7 @@ func JWTAuthentication(us db.UserStore) fiber.Handler {
 		if err != nil || userID != user.ID {
 			return types.ErrUnauthorized(fmt.Errorf("token user not in database"))
 		}
-		c.Context().SetUserValue("user", user)
+		c.Context().SetUserValue("user", *user)
 		return c.Next()
 	}
 }

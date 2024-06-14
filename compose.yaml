@@ -1,0 +1,25 @@
+services:
+  mongodb:
+    image: "mongo:8.0.0-rc7"
+    container_name: hotel-db
+    # ports:
+    #   - "27017:27017"
+    networks:
+      - back-network
+  api:
+    build: .
+    container_name: hotel-api
+    depends_on:
+      - mongodb
+    ports:
+      - "4000:4000"
+    networks:
+      - back-network
+networks:
+  back-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.0.0.0/24"
+          gateway: "172.0.0.1"

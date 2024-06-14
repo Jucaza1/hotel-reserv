@@ -17,9 +17,9 @@ import (
 func main() {
 	us, hs, rs, bs := initialization()
 	var hotels [3]string
-	hotels[0] = seedHotel("Maria", "Spain", 5, hs, rs)
-	hotels[1] = seedHotel("Rose", "France", 4, hs, rs)
-	hotels[2] = seedHotel("Sheena", "Portugal", 3, hs, rs)
+	hotels[0] = seedHotel("Maria", "Spain", 5, hs)
+	hotels[1] = seedHotel("Rose", "France", 4, hs)
+	hotels[2] = seedHotel("Sheena", "Portugal", 3, hs)
 
 	var rooms [12]string
 	rooms[0] = seedRoom(hotels[0], types.Small, 100, rs)
@@ -117,7 +117,7 @@ func seedRoom(hotelID string, size types.RoomSize, price float64, rs db.RoomStor
 	return room.ID
 }
 
-func seedHotel(name, location string, rating int, hs db.HotelStore, rs db.RoomStore) (hotelID string) {
+func seedHotel(name, location string, rating int, hs db.HotelStore) (hotelID string) {
 	ctx := context.Background()
 	hotel := types.Hotel{
 		Name:     name,
