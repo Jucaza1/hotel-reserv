@@ -116,3 +116,19 @@ func (h *UserHandler) HandleGetMyUser(c *fiber.Ctx) error {
 	}
 	return c.JSON(user)
 }
+func (h *UserHandler) HandlePatchMyUser(c *fiber.Ctx) error {
+	var (
+		userID      = c.Context().UserValue("user").(types.User).ID
+		update      types.UpdateUser
+		updateValid map[string]string
+	)
+	if err := c.BodyParser(&update); err != nil {
+		return types.ErrInvalidParams(err)
+	}
+	updateValid, errors := types.ValidateUserUpdate(update)
+	if len(errors) > 0 {
+		return c.Status(http.StatusBadRequest).JSON(errors)
+	}
+	h.userStore.UpdateUser(c.Context(), userID, updateValid)
+	return c.JSON(types.MsgUpdated{Updated: userID})
+}

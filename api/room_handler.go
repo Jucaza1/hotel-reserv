@@ -20,7 +20,7 @@ func NewRoomHandler(rs db.RoomStore, hs db.HotelStore) *RoomHandler {
 	}
 }
 
-func (h *RoomHandler) HandleGetRooms(c *fiber.Ctx) error {
+func (h *RoomHandler) HandleGetRoomsByHotelID(c *fiber.Ctx) error {
 	hid := c.Params("hid")
 	if len(hid) == 0 {
 		return types.ErrInvalidID(fmt.Errorf("missing params in path"))

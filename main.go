@@ -54,16 +54,17 @@ func main() {
 	auth.Post("/auth", authHandler.HandleAuthenticate)
 
 	//version api
-	apiv1.Get("/users/me", userHandler.HandleGetMyUser)
+	apiv1.Get("/users", userHandler.HandleGetMyUser)
 	apiv1.Post("/users", userHandler.HandlePostUser)
+	apiv1.Patch("/users", userHandler.HandlePatchMyUser)
 
 	//hotel handler
 	apiv1.Get("/hotels", hotelHandler.HandleGetHotels)
 	apiv1.Get("/hotels/:id", hotelHandler.HandleGetHotel)
 
 	//room handler
-	apiv1.Get("/hotels/:hid/rooms", roomHandler.HandleGetRooms)
-	apiv1.Get("/hotels/:hid/rooms/id", roomHandler.HandleGetRoomByID)
+	apiv1.Get("/hotels/:hid/rooms", roomHandler.HandleGetRoomsByHotelID)
+    apiv1.Get("rooms/:id", roomHandler.HandleGetRoomByID)
 
 	//booking handler
 	apiv1.Get("/rooms/:id/bookings", bookingHandler.HandleGetBookingsByRoom)

@@ -63,7 +63,7 @@ func TestHandleGetRooms(t *testing.T) {
 	hotelID := seedTestHotel(t, tdb.HotelStore)
 	app := NewFiberAppCentralErr()
 	roomHandler := NewRoomHandler(tdb.RoomStore, tdb.HotelStore)
-	app.Get("/hotels/:hid/rooms", roomHandler.HandleGetRooms)
+	app.Get("/hotels/:hid/rooms", roomHandler.HandleGetRoomsByHotelID)
 	params := [2]types.CreateRoomParams{
 		{
 			Size:  types.Normal,
