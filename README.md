@@ -1,6 +1,10 @@
 # Hotel-reserv
 Hotel reservation API using GO, fiber, and mongodb
 
+> [!IMPORTANT]
+> API docs with all the endpoints and signatures:
+> [Docs/App_routes.md](https://github.com/Jucaza1/hotel-reserv/blob/main/docs/App_routes.md)
+
 ## Cloning repo
 ```bash
 git clone https://github.com/jucaza1/hotel-reserv && cd hotel-reserv
