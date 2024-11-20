@@ -137,6 +137,8 @@ func (h *BookingHandler) HandleCancelBooking(c *fiber.Ctx) error {
 			if err := h.bookStore.CancelBooking(c.Context(), bookingID); err != nil {
 				return err
 			}
+		} else {
+			return types.ErrUnauthorized(fmt.Errorf("unauthorized cancel on different user"))
 		}
 	}
 	return c.JSON(types.MsgCancelled{Cancelled: bookingID})

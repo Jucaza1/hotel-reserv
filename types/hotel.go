@@ -28,7 +28,7 @@ func (p CreateHotelParams) Validate() map[string]string {
 		errors["name"] = fmt.Sprintf("hotel name should be at least %d characters", minHotelName)
 	}
 	if len(p.Location) < minHotelLocation {
-		errors["name"] = fmt.Sprintf("hotel location should be at least %d characters", minHotelLocation)
+		errors["location"] = fmt.Sprintf("hotel location should be at least %d characters", minHotelLocation)
 	}
 	if p.Rating < minHotelRating {
 		errors["rating"] = fmt.Sprintf("hotel rating should be greater than %d", minHotelRating)

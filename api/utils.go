@@ -31,7 +31,9 @@ func NewFiberAppCentralErr() *fiber.App {
 
 func injectENV(t *testing.T) {
 	if err := godotenv.Load("../.env"); err != nil {
-		t.Error(err)
+		if err := godotenv.Load("../default.env"); err != nil {
+			t.Error(err)
+		}
 	}
 	db.DBURI = os.Getenv("MONGO_DB_URI")
 	db.TestDBNAME = os.Getenv("MONGO_DB_TESTNAME")

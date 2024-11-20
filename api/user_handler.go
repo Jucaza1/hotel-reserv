@@ -35,6 +35,12 @@ func (h *UserHandler) HandlePatchUser(c *fiber.Ctx) error {
 	if len(errors) > 0 {
 		return c.Status(http.StatusBadRequest).JSON(errors)
 	}
+	if email := updateValid["email"]; email != "" {
+		if userAlready, _ := h.userStore.GetUserByEmail(c.Context(), email); userAlready != nil {
+			return c.Status(http.StatusUnprocessableEntity).JSON(map[string]string{"email": "email in use"})
+
+		}
+	}
 	h.userStore.UpdateUser(c.Context(), userID, updateValid)
 	return c.JSON(types.MsgUpdated{Updated: userID})
 }
@@ -62,11 +68,15 @@ func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 	if err != nil {
 		return types.ErrInvalidParams(err)
 	}
+	if userAlready, _ := h.userStore.GetUserByEmail(c.Context(), user.Email); userAlready != nil {
+		return c.Status(http.StatusUnprocessableEntity).JSON(map[string]string{"email": "email in use"})
+
+	}
 	insertedUser, err := h.userStore.InsertUser(c.Context(), user)
 	if err != nil {
 		return err
 	}
-	return c.JSON(insertedUser)
+	return c.Status(http.StatusCreated).JSON(insertedUser)
 }
 func (h *UserHandler) HandlePostAdminUser(c *fiber.Ctx) error {
 	var params types.CreateUserParams
@@ -85,7 +95,7 @@ func (h *UserHandler) HandlePostAdminUser(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(insertedUser)
+	return c.Status(http.StatusCreated).JSON(insertedUser)
 }
 
 func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
@@ -128,6 +138,12 @@ func (h *UserHandler) HandlePatchMyUser(c *fiber.Ctx) error {
 	updateValid, errors := types.ValidateUserUpdate(update)
 	if len(errors) > 0 {
 		return c.Status(http.StatusBadRequest).JSON(errors)
+	}
+	if email := updateValid["email"]; email != "" {
+		if userAlready, _ := h.userStore.GetUserByEmail(c.Context(), email); userAlready != nil {
+			return c.Status(http.StatusUnprocessableEntity).JSON(map[string]string{"email": "email in use"})
+
+		}
 	}
 	h.userStore.UpdateUser(c.Context(), userID, updateValid)
 	return c.JSON(types.MsgUpdated{Updated: userID})

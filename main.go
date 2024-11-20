@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 	"github.com/jucaza1/hotel-reserv/api"
 	middleware "github.com/jucaza1/hotel-reserv/api/middelware"
@@ -15,7 +16,9 @@ import (
 
 func main() {
 	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal(err)
+		if err := godotenv.Load("default.env"); err != nil {
+			log.Fatal(err)
+		}
 	}
 	db.DBURI = os.Getenv("MONGO_DB_URI")
 	db.DBNAME = os.Getenv("MONGO_DB_NAME")
@@ -49,13 +52,21 @@ func main() {
 		apiv1          = app.Group("/api/v1", middleware.JWTAuthentication(uStore))
 		admin          = apiv1.Group("/admin", middleware.AdminMiddleware)
 	)
+	//CORS
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "*",                             // Specific origins
+		AllowMethods:     "GET,POST,PUT,DELETE",           // HTTP methods
+		AllowHeaders:     "Content-Type, X-Authorization", // Custom headers
+		ExposeHeaders:    "Content-Length",                // Headers exposed to the client
+		AllowCredentials: true,                            // Allow cookies
+	}))
 
 	//auth
 	auth.Post("/auth", authHandler.HandleAuthenticate)
+	auth.Post("/register", userHandler.HandlePostUser)
 
 	//version api
 	apiv1.Get("/users", userHandler.HandleGetMyUser)
-	apiv1.Post("/users", userHandler.HandlePostUser)
 	apiv1.Patch("/users", userHandler.HandlePatchMyUser)
 
 	//hotel handler
@@ -64,7 +75,7 @@ func main() {
 
 	//room handler
 	apiv1.Get("/hotels/:hid/rooms", roomHandler.HandleGetRoomsByHotelID)
-    apiv1.Get("rooms/:id", roomHandler.HandleGetRoomByID)
+	apiv1.Get("rooms/:id", roomHandler.HandleGetRoomByID)
 
 	//booking handler
 	apiv1.Get("/rooms/:id/bookings", bookingHandler.HandleGetBookingsByRoom)
@@ -89,7 +100,7 @@ func main() {
 	//admin only hotel handler
 	admin.Delete("/hotels/:id", hotelHandler.HandleDeleteHotel, roomHandler.HandleDeleteRoomsByHotel)
 	admin.Post("/hotels", hotelHandler.HandlePostHotel)
-	admin.Patch("/hotels", hotelHandler.HandlePatchHotel)
+	admin.Patch("/hotels/:id", hotelHandler.HandlePatchHotel)
 	admin.Delete("/bookings/:id", bookingHandler.HandleDeleteBooking)
 
 	log.Println("app listening on port ", listenAddr)
