@@ -54,11 +54,11 @@ func main() {
 	)
 	//CORS
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "*",                             // Specific origins
+		AllowOrigins:     "http://localhost",              // Specific origins
 		AllowMethods:     "GET,POST,PUT,DELETE",           // HTTP methods
 		AllowHeaders:     "Content-Type, X-Authorization", // Custom headers
 		ExposeHeaders:    "Content-Length",                // Headers exposed to the client
-		AllowCredentials: true,                            // Allow cookies
+		AllowCredentials: false,                            // Allow cookies
 	}))
 
 	//auth

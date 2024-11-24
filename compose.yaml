@@ -2,10 +2,12 @@ services:
   mongodb:
     image: "mongo:8.0.0-rc7"
     container_name: hotel-db
-    # ports:
-    #   - "27017:27017"
+    ports:
+      - "27017:27017"
     networks:
       - back-network
+    volumes:
+      - mongodb_data:/data/db  # Persist data
   api:
     build: .
     container_name: hotel-api
@@ -21,5 +23,7 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: "172.0.0.0/24"
-          gateway: "172.0.0.1"
+        - subnet: "172.16.0.0/24"
+          gateway: "172.16.0.1"
+volumes:
+  mongodb_data:  # Named volume for MongoDB persistence

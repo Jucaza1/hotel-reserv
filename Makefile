@@ -1,9 +1,11 @@
 build:
-	@go build -o bin/api main.go
+	@go build -o bin/api ./cmd/apiv1/main.go
 run: build
 	@./bin/api
 seed:
-	@go run scripts/seed.go
+	@go run ./seed/seed.go
+seed-run: seed
+	@./bin/api
 test:
 	@go test -v ./...
 
@@ -12,9 +14,10 @@ docker-mongo:
 
 docker-api:
 	echo "building Docker file"
-	@docker build -t api .
+	@docker build --no-cache -t api .
 	echo "running API inside Docker container"
 	@docker run -p 4000:4000 api
 
 docker-compose:
+	@docker build --no-cache -t api .
 	@docker-compose up -d

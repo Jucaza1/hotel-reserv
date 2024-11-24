@@ -59,14 +59,12 @@ func main() {
 
 func initialization() (us db.UserStore, hs db.HotelStore, rs db.RoomStore, bs db.BookingStore) {
 	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal(err)
+		if err := godotenv.Load("default.env"); err != nil {
+			log.Fatal(err)
+		}
 	}
 	db.DBURI = os.Getenv("MONGO_DB_URI")
 	db.DBNAME = os.Getenv("MONGO_DB_NAME")
-	listenAddr := os.Getenv("HTTP_LISTEN_ADDRESS")
-	if listenAddr == "" {
-		log.Fatal("error: HTTP_LISTEN_ADDRESS not found in .env")
-	}
 	if db.DBNAME == "" {
 		log.Fatal("error: MONGO_DB_NAME not found in .env")
 	}
