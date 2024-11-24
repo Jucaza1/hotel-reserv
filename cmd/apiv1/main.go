@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 	"github.com/jucaza1/hotel-reserv/api"
@@ -60,6 +61,14 @@ func main() {
 		ExposeHeaders:    "Content-Length",                // Headers exposed to the client
 		AllowCredentials: false,                            // Allow cookies
 	}))
+    //healthz
+    app.Get("/healthz", func(c *fiber.Ctx) error {
+		// Return a 200 status with a simple message
+		return c.JSON(fiber.Map{
+			"status":  "healthy",
+			"message": "API is running",
+		})
+	})
 
 	//auth
 	auth.Post("/auth", authHandler.HandleAuthenticate)
