@@ -37,6 +37,34 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+    app:= api.NewFiberAppCentralErr()
+
+	//CORS
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		// AllowOrigins:     "http://localhost:5173,",              // Specific origins
+		AllowMethods:     "GET,POST,PUT,DELETE",            // HTTP methods
+		AllowHeaders:     "Content-Type,X-Authorization",   // Custom headers
+		ExposeHeaders:    "Content-Length,X-Authorization", // Headers exposed to the client
+		AllowCredentials: false,                            // Allow cookies
+	}))
+	app.Options("/*", func(c *fiber.Ctx) error {
+		// c.Set("Access-Control-Allow-Origin", "*")
+		// c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+		// c.Set("Access-Control-Allow-Headers", "Content-Type, X-Authorization")
+		return c.SendStatus(204)
+	})
+
+	//healthz
+	app.Get("/healthz", func(c *fiber.Ctx) error {
+		// Return a 200 status with a simple message
+		return c.JSON(fiber.Map{
+			"status":  "healthy",
+			"message": "API is running",
+		})
+	})
+
 	//var initialization
 	var (
 		uStore         = db.NewMongoUserStore(client, db.DBNAME)
@@ -48,27 +76,10 @@ func main() {
 		roomHandler    = api.NewRoomHandler(rStore, hStore)
 		bookingHandler = api.NewBookingHandler(bStore, rStore)
 		authHandler    = api.NewAuthHandler(uStore)
-		app            = api.NewFiberAppCentralErr()
 		auth           = app.Group("/api")
 		apiv1          = app.Group("/api/v1", middleware.JWTAuthentication(uStore))
 		admin          = apiv1.Group("/admin", middleware.AdminMiddleware)
 	)
-	//CORS
-	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost",              // Specific origins
-		AllowMethods:     "GET,POST,PUT,DELETE",           // HTTP methods
-		AllowHeaders:     "Content-Type, X-Authorization", // Custom headers
-		ExposeHeaders:    "Content-Length",                // Headers exposed to the client
-		AllowCredentials: false,                            // Allow cookies
-	}))
-    //healthz
-    app.Get("/healthz", func(c *fiber.Ctx) error {
-		// Return a 200 status with a simple message
-		return c.JSON(fiber.Map{
-			"status":  "healthy",
-			"message": "API is running",
-		})
-	})
 
 	//auth
 	auth.Post("/auth", authHandler.HandleAuthenticate)

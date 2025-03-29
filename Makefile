@@ -19,5 +19,4 @@ docker-api:
 	@docker run -p 4000:4000 api
 
 docker-compose:
-	@docker build --no-cache -t api .
-	@docker compose up -d
+	@docker compose up --build -d
