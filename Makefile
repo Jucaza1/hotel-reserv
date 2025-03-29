@@ -13,11 +13,11 @@ docker-mongo:
 	@docker run --name mongodb -p 27017:27017 -d mongo:latest
 
 docker-api:
-	echo "building Docker file"
+	@echo "building Docker file"
 	@docker build --no-cache -t api .
-	echo "running API inside Docker container"
+	@echo "running API inside Docker container"
 	@docker run -p 4000:4000 api
 
 docker-compose:
 	@docker build --no-cache -t api .
-	@docker-compose up -d
+	@docker compose up -d

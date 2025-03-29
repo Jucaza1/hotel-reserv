@@ -20,10 +20,10 @@ services:
 networks:
   back-network:
     driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: "172.16.0.0/24"
-          gateway: "172.16.0.1"
+    # ipam:
+    #   driver: default
+    #   config:
+    #     - subnet: "172.16.0.0/24"
+    #       gateway: "172.16.0.1"
 volumes:
   mongodb_data:  # Named volume for MongoDB persistence
