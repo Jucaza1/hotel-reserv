@@ -13,11 +13,16 @@ git clone https://github.com/jucaza1/hotel-reserv && cd hotel-reserv
 ---
 
 ## A) Build image and compose up both mongodb and hotel API
+**start:**
 ```bash
 make docker-compose
 ```
 By default on [http://localhost:4000](http://localhost:4000)
 To change it edit docker-compose.yaml 4000:4000 -> XXXX:4000
+**stop: (and reset DB)**
+```bash
+docker compose down -v
+```
 
 ---
 ## B.1a) Set up api with docker
